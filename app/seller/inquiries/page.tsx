@@ -17,7 +17,8 @@ export default function SellerInquiriesPage() {
     (async () => {
       try {
         const token = localStorage.getItem("token") || "";
-        const url = `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api/v1"}/seller/inquiries`;
+const apiBase = process.env.NEXT_PUBLIC_API_URL ?? "/api/v1";
+const url = `${apiBase}/seller/inquiries`;
         const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
         if (!res.ok) throw new Error(await res.text());
         const json = await res.json();
