@@ -1,21 +1,20 @@
 import { notFound } from "next/navigation";
 import { getListings, getListingById, type Listing } from "@/lib/api";
-import Gallery from "./Gallery"; // 👈 جديد
+import Gallery from "./Gallery";
 import ContactBox from "./ContactBox";
-
 
 export async function generateStaticParams() {
   const listings = await getListings().catch(() => []);
-  return (listings || []).map((item: any) => ({ id: String(item?.id) }));
+  return (listings || []).map((item: any) => ({
+    id: String(item?.id),
+  }));
 }
 
 export const revalidate = 0;
 
-export default async function ListingDetailPage({
-  params,
-}: {
-  params: { id: string };
-}) {
+export default async function ListingDetailPage(
+  { params }: { params: { id: string } }
+) {
   const listing = (await getListingById(params.id).catch(() => null)) as Listing | null;
   if (!listing) notFound();
 
@@ -30,10 +29,7 @@ export default async function ListingDetailPage({
     <div className="min-h-screen bg-[rgb(255,247,232)] text-gray-800">
       <div className="max-w-5xl mx-auto p-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          {/* ✅ المعرض بواجهة تفاعلية بدون إعادة تحميل */}
           <Gallery images={images} title={listing.title} />
-
-          {/* التفاصيل */}
           <section className="space-y-4">
             <h1 className="text-2xl font-bold text-gray-900">{listing.title}</h1>
             {listing.desc && (
@@ -46,7 +42,6 @@ export default async function ListingDetailPage({
               <div>الحد الأدنى: <span className="font-medium">{minOrderQty}</span></div>
               <div>المخزون: <span className="font-medium">{stock}</span></div>
             </div>
-
             <div className="pt-2">
               <ContactBox listingID={String(listing.id)} sellerID={sellerId} />
             </div>

@@ -1,10 +1,8 @@
-// app/listings/[id]/edit/EditListingForm.tsx
 "use client";
 
 import { useEffect, useState } from "react";
-import { updateListing, type CreateListingInput } from "@/lib/api";
-import { getUserIdFromToken } from "@/lib/api";
 import { useRouter } from "next/navigation";
+import { updateListing, type CreateListingInput, getUserIdFromToken } from "@/lib/api";
 
 type Props = {
   listingId: string;
@@ -14,6 +12,7 @@ type Props = {
 
 export default function EditListingForm({ listingId, ownerId, initial }: Props) {
   const router = useRouter();
+
   const [form, setForm] = useState<CreateListingInput>(initial);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -21,27 +20,31 @@ export default function EditListingForm({ listingId, ownerId, initial }: Props) 
   const [allowed, setAllowed] = useState(false);
 
   useEffect(() => {
-    const t = localStorage.getItem("token");
+    const t = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+
     if (!t) {
-      router.replace("/login?next=" + encodeURIComponent(`/listings/${listingId}/edit`));
+      router.replace(
+        "/login?next=" + encodeURIComponent(`/listings/${listingId}/edit`)
+      );
       return;
     }
-      const uid = getUserIdFromToken(t);
 
-      if (uid && String(uid) === String(ownerId)) {
-        setAllowed(true);
-      } else {
-        setAllowed(false);
-      }
+    const uid = getUserIdFromToken(t);
 
-      setAuthChecked(true);
+    if (uid && String(uid) === String(ownerId)) {
+      setAllowed(true);
+    } else {
+      setAllowed(false);
+    }
 
+    setAuthChecked(true);
   }, [listingId, ownerId, router]);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
     setSubmitting(true);
+
     try {
       const token = localStorage.getItem("token") || "";
       await updateListing(listingId, form, token);
@@ -56,6 +59,7 @@ export default function EditListingForm({ listingId, ownerId, initial }: Props) 
   if (!authChecked) {
     return <div className="text-gray-500">Checking permission…</div>;
   }
+
   if (!allowed) {
     return (
       <div className="rounded-xl border bg-white p-4 text-red-600">
@@ -97,33 +101,43 @@ export default function EditListingForm({ listingId, ownerId, initial }: Props) 
             step="0.01"
             className="w-full rounded-md border p-2"
             value={form.price}
-            onChange={(e) => setForm({ ...form, price: Number(e.target.value || 0) })}
+            onChange={(e) =>
+              setForm({ ...form, price: Number(e.target.value || 0) })
+            }
             required
           />
         </div>
+
         <div>
           <label className="block text-sm font-medium mb-1">Min order</label>
           <input
             type="number"
             className="w-full rounded-md border p-2"
             value={form.minOrderQty}
-            onChange={(e) => setForm({ ...form, minOrderQty: Number(e.target.value || 1) })}
+            onChange={(e) =>
+              setForm({
+                ...form,
+                minOrderQty: Number(e.target.value || 1),
+              })
+            }
             required
           />
         </div>
+
         <div>
           <label className="block text-sm font-medium mb-1">Stock</label>
           <input
             type="number"
             className="w-full rounded-md border p-2"
             value={form.stock}
-            onChange={(e) => setForm({ ...form, stock: Number(e.target.value || 0) })}
+            onChange={(e) =>
+              setForm({ ...form, stock: Number(e.target.value || 0) })
+            }
             required
           />
         </div>
       </div>
 
-      {/* صور بسيطة: حقل نصّي لكل رابط موجود + إضافة رابط جديد */}
       <div>
         <label className="block text-sm font-medium mb-2">Image URLs (up to 4)</label>
         <div className="space-y-2">
@@ -142,7 +156,9 @@ export default function EditListingForm({ listingId, ownerId, initial }: Props) 
                 type="button"
                 className="px-3 rounded border"
                 onClick={() => {
-                  const arr = (form.imageUrls || []).filter((_, idx) => idx !== i);
+                  const arr = (form.imageUrls || []).filter(
+                    (_, idx) => idx !== i
+                  );
                   setForm({ ...form, imageUrls: arr });
                 }}
                 aria-label="Remove"
@@ -151,12 +167,16 @@ export default function EditListingForm({ listingId, ownerId, initial }: Props) 
               </button>
             </div>
           ))}
+
           {(form.imageUrls?.length || 0) < 4 && (
             <button
               type="button"
               className="rounded border px-3 py-1"
               onClick={() =>
-                setForm({ ...form, imageUrls: [...(form.imageUrls || []), ""] })
+                setForm({
+                  ...form,
+                  imageUrls: [...(form.imageUrls || []), ""],
+                })
               }
             >
               + Add image URL

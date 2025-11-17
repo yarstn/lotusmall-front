@@ -1,8 +1,8 @@
-// lib/api.ts
-// --------------------------------------
-// Base + helpers
-// --------------------------------------
-const API_BASE = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api/v1").replace(/\/+$/, ""); // remove trailing slashes
+const API_BASE = (
+typeof window === "undefined"
+? "http://localhost:8080/api/v1"          // SSR / build: يكلم الباك إند مباشرة
+    : (process.env.NEXT_PUBLIC_API_URL || "/api/v1") // المتصفح: يكلم /api عبر nginx
+).replace(/\/+$/, "");
 
 
 function buildUrl(endpoint: string) {
@@ -317,11 +317,23 @@ export async function updateListing(
   });
 }
 
-export async function getListings(params?: { origin?: string; originCountry?: string }): Promise<Listing[]> {
+export async function getListings(
+  params?: { origin?: string; originCountry?: string }
+): Promise<Listing[]> {
   // ندعم كلا الاسمين ونتحوّل للباكند بـ originCountry
   const key = (params?.originCountry ?? params?.origin)?.trim();
   const qs = key ? `?originCountry=${encodeURIComponent(key)}` : "";
-  return apiFetch<Listing[]>(`/listings${qs}`);
+
+  const res = await fetch(`${API_BASE}/listings${qs}`, {
+    cache: "no-store",           // لا تستخدم كاش أبداً
+    next: { revalidate: 0 },     // ولا تعيد استخدام بيانات قديمة
+  });
+
+  if (!res.ok) {
+    throw new Error("Failed to fetch listings");
+  }
+
+  return res.json();
 }
 // ===== Admin APIs =====
 export async function getAdminStats(token: string): Promise<{ users: number; sellers: number; listings: number; }> {

@@ -2,32 +2,27 @@ import { notFound } from "next/navigation";
 import { getListings, getListingById, type Listing } from "@/lib/api";
 import EditListingForm from "./EditListingForm";
 
+// نخلي الصفحة static قابلة للتصدير
+export const revalidate = 60;
+
 /**
- * لازم نولّد كل الـ IDs وقت الـ build لأن عندك output: "export".
- * نخزن فقط { id } كسلاسل نصية.
+ * نولّد كل IDs للإعلانات عشان Next يعمل
+ * ملفات static لها ولصفحة الإيدت.
  */
 export async function generateStaticParams() {
   const listings = await getListings().catch(() => []);
   return (listings || []).map((l: any) => ({ id: String(l?.id) }));
 }
 
-// يسمح بإعادة التحميل أثناء التطوير (ممكن تخليه >0 في الإنتاج)
-export const revalidate = 0;
+type PageProps = { params: { id: string } };
 
-export default async function EditListingPage({
-  params,
-}: {
-  params: { id: string };
-}) {
-  const listing = (await getListingById(params.id).catch(() => null)) as
-    | Listing
-    | null;
+export default async function EditListingPage({ params }: PageProps) {
+  const listing = (await getListingById(params.id).catch(() => null)) as Listing | null;
 
   if (!listing) {
     notFound();
   }
 
-  // نظّف الصور قبل تمريرها للفورم (لا نسمح بقيم فاضية) وخذي حتى 4 فقط
   const cleanedImages = (listing.imageUrls || [])
     .filter((u) => typeof u === "string" && u.trim() !== "")
     .slice(0, 4);
@@ -39,6 +34,7 @@ export default async function EditListingPage({
 
         <EditListingForm
           listingId={String(listing.id)}
+          ownerId={listing.seller?.id ?? ""}
           initial={{
             title: listing.title,
             desc: listing.desc ?? "",
@@ -47,7 +43,6 @@ export default async function EditListingPage({
             stock: listing.stock,
             imageUrls: cleanedImages,
           }}
-          ownerId={listing.seller?.id ?? ""}
         />
       </div>
     </div>
